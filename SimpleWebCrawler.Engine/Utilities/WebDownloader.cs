@@ -5,6 +5,12 @@ namespace SimpleWebCrawler.Engine.Utilities
 {
     internal class WebDownloader : WebClient
     {
+        static WebDownloader()
+        {
+            //ignoring SSL certificate errors
+            ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, errors) => true;
+        }
+
         private readonly CookieContainer _cookieContainer = new CookieContainer();
 
         //time in milliseconds        
@@ -14,11 +20,11 @@ namespace SimpleWebCrawler.Engine.Utilities
 
         public WebDownloader(int timeout)
         {
-            Timeout = timeout;
+            Timeout = timeout;            
         }
 
         protected override WebRequest GetWebRequest(Uri address)
-        {
+        {            
             var request = base.GetWebRequest(address);
             var webRequest = request as HttpWebRequest;
             if (webRequest != null)
