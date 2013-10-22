@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using SimpleWebCrawler.Engine.Entities;
-using SimpleWebCrawler.Engine.Utilities;
 
 namespace SimpleWebCrawler.Engine
 {
@@ -12,7 +11,8 @@ namespace SimpleWebCrawler.Engine
         public IEnumerable<ParsedUrl> Process(
             IEnumerable<string> urlsToParse, 
             Func<object, object, ParsedUrl> processMethod,
-            CancellationToken ct)
+            CancellationToken ct,            
+            Action<ErrorInfo> onErrorCallback)
         {
             if (null == urlsToParse)
                 throw new ArgumentException("urlsToParse cannot be null");
@@ -29,6 +29,7 @@ namespace SimpleWebCrawler.Engine
             var result = new List<ParsedUrl>();
 
             //store the task results in a collection
+            //apply one by one task handling
             while (tasks.Count > 0)
             {
                 int index = 0;
@@ -36,30 +37,43 @@ namespace SimpleWebCrawler.Engine
                 {                     
                     index = Task.WaitAny(tasks.ToArray());
 
-                    var completedTask = tasks[index];
+                    var completedTask = tasks[index];                    
                     result.Add(completedTask.Result);                    
-                }
-                //TODO - notify about the error
+                }                
                 catch (AggregateException ae)
                 {
                     var ex = ae.Flatten();
                     foreach (var innerException in ex.InnerExceptions)
-                    {
-                        //Console.WriteLine(innerException.Message);
+                    {                        
                         if (innerException is TaskCanceledException)
                         {
-                            //todo - do we need to do anything here
+                            onErrorCallback(new ErrorInfo {FriendlyMessage = "Task cancelled", ErrorMessage = innerException.Message});
+                        }
+                        else if (innerException is ParsedUrlException)
+                        {
+                            var parseUrlException = (ParsedUrlException) innerException;
+                            var errorInfo = parseUrlException.ErrorInfo;
+                            if (!string.IsNullOrEmpty(errorInfo.Url))
+                            {
+                                result.Add(new ParsedUrl
+                                               {
+                                                   Url = errorInfo.Url,
+                                                   Error = new ErrorData {Message = errorInfo.FriendlyMessage}
+                                               });
+                            }
+                            onErrorCallback(errorInfo);
                         }
                         else
                         {
-                            EventLogLogger.Instance.LogError(innerException.Message);
+                            var errorMessage = innerException.Message;                            
+                            onErrorCallback(new ErrorInfo {FriendlyMessage = errorMessage, ErrorMessage = errorMessage});
                         }                        
                     }
                 }
                 catch (Exception ex)
                 {
-                    EventLogLogger.Instance.LogError(ex.Message);
-                    //Console.WriteLine(ex.Message);
+                    var errorMessage = ex.Message;                            
+                    onErrorCallback(new ErrorInfo { FriendlyMessage = errorMessage, ErrorMessage = errorMessage });
                 }
                 finally
                 {

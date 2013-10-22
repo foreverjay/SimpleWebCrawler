@@ -98,7 +98,8 @@ namespace SimpleWebCrawler.Engine
 
                 var result = processor.Process(urlsToProcess,
                                                (url, ct) => ProcessUrl((string) url, (CancellationToken)ct),
-                                               CancellationToken);
+                                               CancellationToken,
+                                               OnUrlProcessingErrorOccured);
                 processedUrls.AddRange(result);
 
                 //if cancellation has been requested, then stop processing
@@ -132,38 +133,21 @@ namespace SimpleWebCrawler.Engine
         private ParsedUrl ProcessUrl(string url, CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
-            {
-                //Console.WriteLine("task cancellled");
+            {                
                 ct.ThrowIfCancellationRequested();
             }
-
             var downloadManager = new DownloadManager(url);
-            downloadManager.DownloadHtml();
+            var pageContent = downloadManager.DownloadHtml();            
 
-            if (!downloadManager.HasError)
-            {
-                var pageContent = downloadManager.DownloadedContent;
-
-                if (ct.IsCancellationRequested)
-                {
-                    //Console.WriteLine("task cancellled");
-                    ct.ThrowIfCancellationRequested();
-                }
-
-                IEnumerable<string> parsedUrls;
-                if (HtmlParser.Instance.Parse(pageContent, out parsedUrls))
-                {
-                    var tmpParsedUrls = parsedUrls.ToList();
-                    OnUrlProcessed(url, tmpParsedUrls, pageContent);
-                    return new ParsedUrl { Url = url, FoundUrls = tmpParsedUrls };
-                }
-
-                OnUrlProcessingErrorOccured(url, "Error when parsing html.");
-                return new ParsedUrl {Url = url, Error = new ErrorData {Message = "Error when parsing html."}};
+            if (ct.IsCancellationRequested)
+            {                
+                ct.ThrowIfCancellationRequested();
             }
-
-            OnUrlProcessingErrorOccured(url, downloadManager.ErrorMessage);
-            return new ParsedUrl {Url = url, Error = new ErrorData {Message = downloadManager.ErrorMessage}};
+            var parsedUrls = HtmlParser.Instance.Parse(pageContent).ToList();
+                                   
+            OnUrlProcessed(url, parsedUrls, pageContent);
+            
+            return new ParsedUrl { Url = url, FoundUrls = parsedUrls };                            
         }       
 
         #region firing the events
@@ -183,11 +167,11 @@ namespace SimpleWebCrawler.Engine
             }
         }
 
-        private void OnUrlProcessingErrorOccured(string url, string errorMessage)
+        private void OnUrlProcessingErrorOccured(ErrorInfo errorInfo)
         {
             if (null != UrlProcessingErrorOccured)
             {
-                UrlProcessingErrorOccured(this, new UrlProcessingErrorOccuredEventArgs {Url = url, ErrorMessage = errorMessage});
+                UrlProcessingErrorOccured(this, new UrlProcessingErrorOccuredEventArgs {ErrorInfo = errorInfo});
             }
         }
         #endregion

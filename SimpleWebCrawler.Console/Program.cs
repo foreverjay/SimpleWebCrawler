@@ -73,7 +73,7 @@ namespace SimpleWebCrawler.Console
                         string.Concat("Processed url: ", eventargs.Url));
 
                 manager.UrlProcessingErrorOccured += (sender, eventargs) => System.Console.WriteLine(
-                        string.Concat("Error ocurred on: ", eventargs.Url));
+                        string.Concat("Error ocurred: ", eventargs.ErrorInfo.FriendlyMessage));
 
                 return manager.Run(urlsToProcess);
             }, token
@@ -109,12 +109,12 @@ namespace SimpleWebCrawler.Console
                                           where null != processUrl.FoundUrls
                                           from foundUrl in processUrl.FoundUrls
                                           select new { Url = processUrl.Url, FoundUrl = foundUrl };
-                //FileLogger.Instance.LogInfo(successEntriesToLog.Select(url => string.Format("{0} -> {1}", url.Url, url.FoundUrl)));
+                FileLogger.Instance.LogInfo(successEntriesToLog.Select(url => string.Format("{0} -> {1}", url.Url, url.FoundUrl)));
 
                 var errorEntriesToLog = from processedUrl in processedUrls
                                         where null != processedUrl.Error
                                         select new { Url = processedUrl.Url, Error = processedUrl.Error.Message };
-                //FileLogger.Instance.LogError(errorEntriesToLog.Select(url => string.Format("{0} -> {1}", url.Url, url.Error)));
+                FileLogger.Instance.LogError(errorEntriesToLog.Select(url => string.Format("{0} -> {1}", url.Url, url.Error)));
 
 
                 System.Console.ReadLine();

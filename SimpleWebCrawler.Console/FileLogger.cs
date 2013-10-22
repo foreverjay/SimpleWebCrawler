@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace SimpleWebCrawler.Engine.Utilities
+namespace SimpleWebCrawler.Console
 {
     internal sealed class FileLogger
     {

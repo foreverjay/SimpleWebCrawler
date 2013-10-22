@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using HtmlAgilityPack;
+using SimpleWebCrawler.Engine.Entities;
 
 namespace SimpleWebCrawler.Engine.Utilities
 {
@@ -13,13 +14,12 @@ namespace SimpleWebCrawler.Engine.Utilities
 
         public static HtmlParser Instance { get { return _instance; } }
 
-        public bool Parse(string html, out IEnumerable<string> urls)
+        public IEnumerable<string> Parse(string html)
         {
-            urls = new List<string>();
-            bool resultStatus = true;
+            var urls = new List<string>();
             if (!string.IsNullOrEmpty(html))
             {
-                var doc = new HtmlDocument();                
+                var doc = new HtmlDocument();
                 try
                 {
                     doc.LoadHtml(html);
@@ -37,12 +37,10 @@ namespace SimpleWebCrawler.Engine.Utilities
                 }
                 catch (Exception ex)
                 {
-                    EventLogLogger.Instance.LogError(ex.StackTrace);                    
-                    resultStatus = false;
-                }                                
+                    throw new ParsedUrlException(new ErrorInfo {FriendlyMessage = "Unable to parse html"}, ex);
+                }
             }
-            
-            return resultStatus;
+            return urls;
         }        
     }
 }

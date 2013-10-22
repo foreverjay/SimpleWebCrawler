@@ -4,8 +4,11 @@ namespace SimpleWebCrawler.Engine.Entities
 {
     public class UrlProcessingErrorOccuredEventArgs : EventArgs
     {
-        public string Url { get; set; }
-        public string ErrorMessage { get; set; }
-        
+        public UrlProcessingErrorOccuredEventArgs()
+        {
+            ErrorInfo = new ErrorInfo();
+        }
+
+        public ErrorInfo ErrorInfo { get; set; }
     }
 }

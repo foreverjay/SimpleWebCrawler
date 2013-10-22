@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace SimpleWebCrawler.Engine.Utilities
+namespace SimpleWebCrawler.Console
 {
     internal sealed class EventLogLogger
     {
