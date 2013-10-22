@@ -85,8 +85,9 @@ namespace SimpleWebCrawler.Engine
         /// <param name="initialUrls"></param>
         /// <returns></returns>
         public DistinctList<ParsedUrl> Run(IEnumerable<string> initialUrls)
-        {            
-            var processor = new ParallelProcessInvoker();            
+        {
+            var parsingManager = new ParsingManager(OnUrlProcessed);
+            var processor = new ParallelProcessInvoker(parsingManager);            
 
             var processedUrls = new DistinctList<ParsedUrl> {EqualityComparer = new ParsedUrlComparer()};
             var urlsToProcess = initialUrls;
@@ -97,7 +98,7 @@ namespace SimpleWebCrawler.Engine
                 OnNewLoopStarted(loopCounter);
 
                 var result = processor.Process(urlsToProcess,
-                                               (url, ct) => ProcessUrl((string) url, (CancellationToken)ct),
+                                               //(url, ct) => ProcessUrl((string) url, (CancellationToken)ct),
                                                CancellationToken,
                                                OnUrlProcessingErrorOccured);
                 processedUrls.AddRange(result);
@@ -128,27 +129,7 @@ namespace SimpleWebCrawler.Engine
         public event EventHandler<UrlProcessedEventArgs> UrlProcessed;
         public event EventHandler<UrlProcessingErrorOccuredEventArgs> UrlProcessingErrorOccured;
 
-        #endregion
-
-        private ParsedUrl ProcessUrl(string url, CancellationToken ct)
-        {
-            if (ct.IsCancellationRequested)
-            {                
-                ct.ThrowIfCancellationRequested();
-            }
-            var downloadManager = new DownloadManager(url);
-            var pageContent = downloadManager.DownloadHtml();            
-
-            if (ct.IsCancellationRequested)
-            {                
-                ct.ThrowIfCancellationRequested();
-            }
-            var parsedUrls = HtmlParser.Instance.Parse(pageContent).ToList();
-                                   
-            OnUrlProcessed(url, parsedUrls, pageContent);
-            
-            return new ParsedUrl { Url = url, FoundUrls = parsedUrls };                            
-        }       
+        #endregion     
 
         #region firing the events
         private void OnNewLoopStarted(int processingDepth)

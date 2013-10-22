@@ -7,11 +7,17 @@ using SimpleWebCrawler.Engine.Entities;
 namespace SimpleWebCrawler.Engine
 {
     internal class ParallelProcessInvoker
-    {       
+    {
+        private readonly ParsingManager _parsingManager;
+        public ParallelProcessInvoker(ParsingManager parsingManager)
+        {
+            _parsingManager = parsingManager;
+        }
+
         public IEnumerable<ParsedUrl> Process(
             IEnumerable<string> urlsToParse, 
-            Func<object, object, ParsedUrl> processMethod,
-            CancellationToken ct,            
+            //Func<object, object, ParsedUrl> processMethod,            
+            CancellationToken ct,              
             Action<ErrorInfo> onErrorCallback)
         {
             if (null == urlsToParse)
@@ -21,7 +27,8 @@ namespace SimpleWebCrawler.Engine
             foreach (var urlToParse in urlsToParse)
             {
                 string url = urlToParse;
-                var task = Task<ParsedUrl>.Factory.StartNew(o => processMethod(url, ct), url, ct);
+                //var task = Task<ParsedUrl>.Factory.StartNew(o => processMethod(url, ct), url, ct);
+                var task = Task<ParsedUrl>.Factory.StartNew(o => _parsingManager.LoadAndParse(url, ct), url, ct);
                 tasks.Add(task);
             }
 

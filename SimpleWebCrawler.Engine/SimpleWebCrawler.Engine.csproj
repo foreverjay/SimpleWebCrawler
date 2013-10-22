@@ -43,7 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DownloadManager.cs" />
+    <Compile Include="ParsingManager.cs" />
     <Compile Include="Entities\DistinctList.cs" />
     <Compile Include="Entities\ErrorInfo.cs" />
     <Compile Include="Entities\Extensions.cs" />
